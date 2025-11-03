@@ -35,7 +35,7 @@ def extract_colors_from_image(img, n_colors=5):
     centers = centers[["name", "r", "g", "b"]]
     return centers.reset_index(drop=True)
 
-# ---------- GENERATIVE BLOB ----------
+# ---------- GENERATIVE SHAPE ----------
 def spiky_blob(cx, cy, radius=1.0, wobble=0.2, n=150):
     ang = np.linspace(0, 2*np.pi, n)
     rad = radius * (1 + wobble * np.random.randn(n))
@@ -53,16 +53,32 @@ def generate_poster(df, layers=10, wobble=0.25, seed=0, edge=False, edge_color=(
     ax.axis("off")
 
     colors = df[["r", "g", "b"]].values
-    for _ in range(layers):
+
+    # ✅ 改进：分散有规律的布局（轻微随机的网格）
+    grid_positions = []
+    grid_x = np.linspace(-2.5, 2.5, int(np.sqrt(layers)) + 2)
+    grid_y = np.linspace(-3, 3, int(np.sqrt(layers)) + 2)
+
+    for gx in grid_x:
+        for gy in grid_y:
+            grid_positions.append((
+                gx + random.uniform(-0.3, 0.3),
+                gy + random.uniform(-0.3, 0.3)
+            ))
+
+    positions = random.sample(grid_positions, min(layers, len(grid_positions)))
+
+    for (cx, cy) in positions:
         color = random.choice(colors)
         rgba = (*color, 0.35)
-        cx, cy = random.uniform(-2, 2), random.uniform(-2, 2)
-        r = random.uniform(1.0, 3.5)
+        r = random.uniform(1.3, 2.0)
         x, y = spiky_blob(cx, cy, r, wobble)
-        ax.fill(x, y, color=rgba, ec=edge_color if edge else None, lw=0.7 if edge else 0)
+        ax.fill(x, y, color=rgba, ec=edge_color if edge else None, lw=0.8 if edge else 0)
 
+    # ✅ 保留原标题风格
     ax.text(0, 3.8, "Final Poster", fontsize=22, weight="bold", ha="center")
     ax.text(0, 3.45, "Week • Arts & Advanced Big Data", fontsize=13, color="gray", ha="center")
+
     ax.set_xlim(-4, 4)
     ax.set_ylim(-4, 4)
     return fig
